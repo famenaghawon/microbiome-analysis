@@ -5,28 +5,26 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "microbiome-analysis"
 version = "0.1.0"
-description = "Reproducible microbiome analysis: diversity, differential abundance, interpretable ML — audited by tests and CI."
+description = "Reproducible microbiome analysis on real HMP data: diversity, differential abundance, leakage-safe ML — audited by tests and CI."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<3.14"
 license = { text = "MIT" }
 authors = [{ name = "Your Name" }]
 dependencies = [
-    "numpy>=1.24",
-    "pandas>=2.0",
+    "numpy>=1.24,<2.5",
+    "pandas>=2.0,<3.0",
     "scipy>=1.10",
     "scikit-learn>=1.3",
     "statsmodels>=0.14",
-    "scikit-bio>=0.5.9",
+    "scikit-bio>=0.6.0",
     "matplotlib>=3.7",
+    "requests>=2.31",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.4", "pytest-cov>=4.1", "ruff>=0.4"]
 dashboard = ["streamlit>=1.30", "plotly>=5.18"]
 docs = ["mkdocs>=1.5", "mkdocs-material>=9.5"]
-
-[project.scripts]
-mb-analysis = "microbiome_analysis.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
