@@ -1,0 +1,16 @@
+
+### `docs/limitations.md`
+
+# Limitations
+
+We are explicit about what this does and does not claim.
+
+1. **Compositional data.** All DA runs on CLR-transformed abundances unless rarefied
+   explicitly. Absolute abundances are not recovered.
+2. **Small n.** CI uses ~150 samples. PERMANOVA and DA tests are underpowered on this scale.
+3. **ANCOM-BC simplification.** Our `ancom_bc_da` is a bias-corrected CLR + Welch t-test,
+   **not** a reimplementation of the Bioconductor package. Cite Lin & Peddada (2020)
+   for the method, not this code, in publications.
+4. **No phylogenetic distances yet.** UniFrac is Phase 4.
+5. **No batch correction.** Metadata-level batch effects are not modeled.
+6. **Not for clinical decisions.**
