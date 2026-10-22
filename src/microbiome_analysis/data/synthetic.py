@@ -41,4 +41,16 @@ def make_synthetic(
         "group_a": "0",
         "group_b": "1",
     }
-    return {"counts": table, "metadata": metadata, "truth": truth}
+    return {
+        "counts": table,
+        "metadata": metadata,
+        "truth": truth,
+        "source": "synthetic",
+        "report": {
+            "source": "synthetic",
+            "n_samples": int(n_samples),
+            "n_taxa": int(n_taxa),
+            "n_planted": int(planted),
+            "effect": float(effect),
+        },
+    }

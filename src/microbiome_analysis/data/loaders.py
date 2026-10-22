@@ -1,20 +1,28 @@
-"""Real HMP genus-level loader with honest provenance.
+"""Data loaders for real and synthetic microbiome data.
 
-Resolution order for --source hmp:
-  1. Explicit path (--path) — wins, must exist.
-  2. Local cache file: data/cache/hmp_genus.tsv (+ hmp_metadata.tsv).
-  3. $MB_HMP_URL (you host the real table on Zenodo/HF and set this).
-  4. Refuse loudly — never silently fall back to synthetic.
+Resolution for --source gmrepo:
+    data/cache/_genus_raw.tsv      (real QIIME2/GMrepo wide-format table)
 
-Format contract for hmp_genus.tsv (tab-separated):
-  - First column = sample ID (index).
-  - Remaining columns = genus names, prefixed `g__` (e.g. g__Bacteroides).
-  - Values = integer read counts.
-Format contract for hmp_metadata.tsv:
-  - First column = sample ID (must match table index).
-  - Column `body_site` ∈ {gut, oral, skin, nasal, vaginal} (case-insensitive;
-    the loader normalizes to lowercase).
+Resolution for --source hmp:
+    1. Explicit path (--path) -- must exist
+    2. data/cache/hmp_genus.tsv + data/cache/hmp_metadata.tsv
+    3. data/fixtures/hmp_genus.tsv + data/fixtures/hmp_metadata.tsv
+    4. $env:MB_HMP_URL (base URL hosting both files)
+    5. Refuse loudly -- never silently fall back to synthetic.
+
+For --source synthetic:
+    Seeded generator with planted DA taxa (test-only).
+
+All loaders return:
+    {
+        "counts":   DataFrame (samples x genera), integer counts
+        "metadata": DataFrame (samples x ...), at least 'body_site'
+        "source":   str
+        "report":   dict of QC info (optional)
+    }
 """
+from __future__ import annotations
+
 import os
 import sys
 from pathlib import Path
@@ -28,10 +36,46 @@ from .synthetic import make_synthetic
 
 HMP_TABLE_NAME = "hmp_genus.tsv"
 HMP_META_NAME = "hmp_metadata.tsv"
+FIXTURES_DIR = Path("data/fixtures")
+GMREPO_DEFAULT = Path("data/cache/_genus_raw.tsv")
 
 
-def _validate(counts: pd.DataFrame, meta: pd.DataFrame) -> pd.DataFrame:
-    """Join, drop non-intersecting samples, log what happened."""
+def load_gmrepo(
+    path=None,
+    min_depth=1000,
+    min_prevalence=0.10,
+    max_samples=None,
+    seed=42,
+):
+    """Load real QIIME2/GMrepo wide-format genus abundance table."""
+    from .gmrepo import load_gmrepo as _load_gmrepo
+
+    p = Path(path) if path else GMREPO_DEFAULT
+    bundle = _load_gmrepo(
+        path=p, min_depth=min_depth, min_prevalence=min_prevalence
+    )
+
+    if max_samples and bundle["counts"].shape[0] > max_samples:
+        keep = bundle["counts"].sample(max_samples, random_state=seed).index
+        bundle["counts"] = bundle["counts"].loc[keep]
+        bundle["metadata"] = bundle["metadata"].loc[keep]
+        bundle["report"]["n_final_samples"] = int(len(keep))
+        bundle["report"]["max_samples_applied"] = int(max_samples)
+        print(
+            "[gmrepo] subsampled to {} samples (seed={})".format(max_samples, seed),
+            file=sys.stderr,
+        )
+
+    return bundle
+
+
+def load_gmrepo_dispatch(**kwargs):
+    """Convenience wrapper for dispatcher tests."""
+    return load_gmrepo(**kwargs)
+
+
+def _validate_hmp(counts, meta):
+    """Join on sample ID, filter to valid body sites, print join diagnostics."""
     if "body_site" not in meta.columns:
         raise ValueError("metadata missing required column 'body_site'")
     meta = meta.copy()
@@ -41,33 +85,48 @@ def _validate(counts: pd.DataFrame, meta: pd.DataFrame) -> pd.DataFrame:
     drop_table = len(counts) - len(inter)
     drop_meta = len(meta) - len(inter)
     join_rate = len(inter) / len(counts) if len(counts) else 0.0
+
     print(
-        f"[hmp] joined {len(inter)} samples "
-        f"(dropped {drop_table} table-only, {drop_meta} meta-only; "
-        f"join rate {join_rate:.2%})",
+        "[hmp] joined {} samples (dropped {} table-only, {} meta-only; "
+        "join rate {:.2%})".format(
+            len(inter), drop_table, drop_meta, join_rate),
         file=sys.stderr,
     )
     if join_rate < 0.8:
         raise ValueError(
-            f"Join rate {join_rate:.2%} < 80% — sample IDs don't line up. "
-            f"Check first IDs: table={list(counts.index[:3])}, "
-            f"meta={list(meta.index[:3])}"
+            "Join rate {:.2%} < 80% -- sample IDs don't line up. "
+            "First table IDs: {}, first meta IDs: {}".format(
+                join_rate, list(counts.index[:3]), list(meta.index[:3]))
         )
+
     counts = counts.loc[inter]
     meta = meta.loc[inter]
-    meta = meta[meta["body_site"].isin({"gut", "oral", "skin", "nasal", "vaginal"})]
+    valid_sites = {"gut", "oral", "skin", "nasal", "vaginal",
+                   "stool", "saliva", "tongue"}
+    mask = meta["body_site"].isin(valid_sites)
+    if mask.sum() == 0:
+        raise ValueError(
+            "None of the body_site values are recognized. "
+            "Found: {}. Expected one of: {}".format(
+                sorted(meta["body_site"].unique())[:10], sorted(valid_sites))
+        )
+    meta = meta[mask]
     counts = counts.loc[meta.index]
-    print(f"[hmp] after body-site filter: {len(counts)} samples", file=sys.stderr)
+    print(
+        "[hmp] after body-site filter: {} samples ({})".format(
+            len(counts), dict(meta["body_site"].value_counts())),
+        file=sys.stderr,
+    )
     return counts, meta
 
 
 def load_hmp(
-    path: Optional[str] = None,
-    max_samples: Optional[int] = None,
-    seed: int = 42,
-    allow_synthetic_fallback: bool = False,
-) -> dict:
-    """Load real HMP genus table + metadata. Refuses silent synthetic fallback."""
+    path=None,
+    max_samples=None,
+    seed=42,
+    allow_synthetic_fallback=False,
+):
+    """Load real HMP-format genus table + metadata. Refuses silent synthetic fallback."""
     counts_path = meta_path = None
 
     if path:
@@ -76,24 +135,32 @@ def load_hmp(
             counts_path, meta_path = p, p.parent / HMP_META_NAME
         elif p.is_dir():
             counts_path, meta_path = p / HMP_TABLE_NAME, p / HMP_META_NAME
-        if not (counts_path and counts_path.exists() and meta_path.exists()):
+        if not (counts_path and counts_path.exists()
+                and meta_path and meta_path.exists()):
             raise FileNotFoundError(
-                f"Expected {HMP_TABLE_NAME} and {HMP_META_NAME} under {path}"
+                "Expected {} and {} under {}".format(
+                    HMP_TABLE_NAME, HMP_META_NAME, path)
             )
     elif (CACHE_DIR / HMP_TABLE_NAME).exists() and (CACHE_DIR / HMP_META_NAME).exists():
         counts_path = CACHE_DIR / HMP_TABLE_NAME
         meta_path = CACHE_DIR / HMP_META_NAME
+    elif (FIXTURES_DIR / HMP_TABLE_NAME).exists() and (FIXTURES_DIR / HMP_META_NAME).exists():
+        counts_path = FIXTURES_DIR / HMP_TABLE_NAME
+        meta_path = FIXTURES_DIR / HMP_META_NAME
     elif os.getenv("MB_HMP_URL"):
         base = os.environ["MB_HMP_URL"].rstrip("/")
-        counts_path = fetch(f"{base}/{HMP_TABLE_NAME}", CACHE_DIR / HMP_TABLE_NAME)
-        meta_path = fetch(f"{base}/{HMP_META_NAME}", CACHE_DIR / HMP_META_NAME)
+        counts_path = fetch("{}/{}".format(base, HMP_TABLE_NAME),
+                            CACHE_DIR / HMP_TABLE_NAME)
+        meta_path = fetch("{}/{}".format(base, HMP_META_NAME),
+                          CACHE_DIR / HMP_META_NAME)
     else:
         msg = (
             "No real HMP data available.\n"
-            f"  Put {HMP_TABLE_NAME} and {HMP_META_NAME} in {CACHE_DIR.resolve()}/, OR\n"
-            "  set $env:MB_HMP_URL to a base URL hosting both files.\n"
-            "See docs/data.md for the format contract and suggested sources."
-        )
+            "  Put {} and {} in {}/, OR\n"
+            "  Put them in {}/, OR\n"
+            "  Set $env:MB_HMP_URL to a base URL hosting both files."
+        ).format(HMP_TABLE_NAME, HMP_META_NAME,
+                 CACHE_DIR.resolve(), FIXTURES_DIR.resolve())
         if allow_synthetic_fallback:
             print("[hmp] WARNING: falling back to synthetic (tests only).\n" + msg,
                   file=sys.stderr)
@@ -102,19 +169,35 @@ def load_hmp(
 
     counts = pd.read_csv(counts_path, sep="\t", index_col=0)
     meta = pd.read_csv(meta_path, sep="\t", index_col=0)
-    counts, meta = _validate(counts, meta)
+    counts, meta = _validate_hmp(counts, meta)
 
     if max_samples and len(counts) > max_samples:
         counts = counts.sample(max_samples, random_state=seed)
         meta = meta.loc[counts.index]
 
-    return {"counts": counts, "metadata": meta, "source": "hmp"}
+    return {
+        "counts": counts,
+        "metadata": meta,
+        "source": "hmp",
+        "report": {
+            "source": "hmp",
+            "counts_path": str(counts_path),
+            "meta_path": str(meta_path),
+            "n_samples": int(len(counts)),
+            "n_genera": int(counts.shape[1]),
+        },
+    }
 
 
-def load(source: str, path: Optional[str] = None, max_samples: Optional[int] = None,
-         seed: int = 42) -> dict:
+def load(source, path=None, max_samples=None, seed=42):
+    """Dispatch to the correct loader by source name."""
+    if source == "gmrepo":
+        return load_gmrepo(path=path, max_samples=max_samples, seed=seed)
     if source == "hmp":
         return load_hmp(path=path, max_samples=max_samples, seed=seed)
     if source == "synthetic":
         return make_synthetic(seed=seed)
-    raise ValueError(f"Unknown source: {source}")
+    raise ValueError(
+        "Unknown source: {!r}. Expected one of: 'gmrepo', 'hmp', 'synthetic'".format(
+            source)
+    )
