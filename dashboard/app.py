@@ -1,16 +1,21 @@
-# dashboard/app.py
+"""Microbiome Analysis Dashboard.
+
+Placeholder Streamlit app. Phase 4 will add real interactive tabs for
+alpha diversity, beta ordination, differential abundance, and ML metrics.
+"""
 import streamlit as st
-from microbiome_analysis.data.loaders import load_hmp_subset
-from microbiome_analysis.diversity.alpha import alpha_table
-from microbiome_analysis.pipeline import run_beta, run_da, run_ml
 
-st.title("Microbiome analysis — reproducible by design")
-src = st.sidebar.selectbox("Dataset", ["synthetic", "hmp_subset", "local BIOM"])
-bundle = load_bundle(src)  # {counts, meta, tree?}
+st.set_page_config(page_title="Microbiome Analysis", layout="wide")
+st.title("Microbiome Analysis — Reproducible by Design")
+st.markdown(
+    """
+    **Status:** Phase 2 complete (real-data DA pipeline + CI).
+    Dashboard UI is Phase 4.
 
-tab_a, tab_b, tab_d, tab_m = st.tabs(
-    ["Alpha", "Beta / PCoA", "Differential abundance", "ML"])
-with tab_a: st.dataframe(alpha_table(bundle["counts"]))
-with tab_b: st.pyplot(run_beta(bundle["counts"], bundle["meta"]))
-with tab_d: st.dataframe(run_da(bundle["counts"], bundle["meta"]))
-with tab_m: st.json(run_ml(bundle["counts"], bundle["meta"]))
+    For the current analysis, run:
+
+    ```powershell
+    python scripts/run_pipeline.py --source gmrepo --out results/real_sanity/
+    ```
+    """
+)

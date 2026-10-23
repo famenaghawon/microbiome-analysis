@@ -13,7 +13,6 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-
 FIXTURE = Path("data/fixtures/gmrepo_mini.tsv")
 
 
@@ -39,7 +38,6 @@ def test_loaders_import():
     from microbiome_analysis.data.gmrepo import load_gmrepo  # noqa: F401
     from microbiome_analysis.data.loaders import (  # noqa: F401
         load,
-        load_gmrepo as lg,
         load_hmp,
     )
 
@@ -79,6 +77,7 @@ def test_pipeline_runs_offline_on_fixture(ensure_fixture, tmp_path):
             "--path", str(ensure_fixture),
             "--out", str(out),
         ],
+        check=False,
         capture_output=True,
         text=True,
         timeout=60,
@@ -115,6 +114,7 @@ def test_pipeline_synthetic_offline(tmp_path):
             "--seed", "42",
             "--out", str(out),
         ],
+        check=False,
         capture_output=True,
         text=True,
         timeout=60,

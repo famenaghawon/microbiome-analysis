@@ -1,9 +1,8 @@
 ﻿"""DA recovery + guard tests. The tests that prove the whole thing works."""
-import numpy as np
 from microbiome_analysis.data.synthetic import make_synthetic
-from microbiome_analysis.preprocess.transforms import clr
-from microbiome_analysis.differential.wilcoxon import wilcoxon_da
 from microbiome_analysis.differential.ancom_bc import ancom_bc_da
+from microbiome_analysis.differential.wilcoxon import wilcoxon_da
+from microbiome_analysis.preprocess.transforms import clr
 
 
 def test_wilcoxon_recovers_planted_taxa():

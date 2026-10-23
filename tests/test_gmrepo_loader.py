@@ -1,9 +1,10 @@
 """Loader tests for real GMrepo data. Fixture is a 20x10 subset."""
 from pathlib import Path
+
 import pandas as pd
 import pytest
-from microbiome_analysis.data.gmrepo import load_gmrepo, _extract_genus
 
+from microbiome_analysis.data.gmrepo import _extract_genus, load_gmrepo
 
 FIXTURE = Path("data/fixtures/gmrepo_mini.tsv")
 

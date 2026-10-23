@@ -1,12 +1,12 @@
 """Typed configuration objects for the pipeline."""
 from dataclasses import dataclass, field
-from typing import Literal, Optional
+from typing import Literal
 
 
 @dataclass(frozen=True)
 class DataConfig:
     source: Literal["synthetic", "hmp", "local", "biom"] = "synthetic"
-    path: Optional[str] = None
+    path: str | None = None
     seed: int = 42
     min_depth: int = 1000
     min_prevalence: float = 0.10
@@ -24,8 +24,8 @@ class TransformConfig:
 class DAConfig:
     method: Literal["wilcoxon", "ancom_bc"] = "wilcoxon"
     group_col: str = "body_site"
-    group_a: Optional[str] = None
-    group_b: Optional[str] = None
+    group_a: str | None = None
+    group_b: str | None = None
     fdr_alpha: float = 0.05
 
 

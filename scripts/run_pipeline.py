@@ -28,9 +28,9 @@ import pandas as pd
 
 from microbiome_analysis.data.loaders import load
 from microbiome_analysis.data.synthetic import make_synthetic
-from microbiome_analysis.preprocess.transforms import clr, sample_depths
-from microbiome_analysis.differential.wilcoxon import wilcoxon_da
 from microbiome_analysis.differential.ancom_bc import ancom_bc_da
+from microbiome_analysis.differential.wilcoxon import wilcoxon_da
+from microbiome_analysis.preprocess.transforms import clr, sample_depths
 
 
 def _group_labels(meta, group_col, ga, gb):
@@ -46,16 +46,14 @@ def _group_labels(meta, group_col, ga, gb):
 
     if group_col not in meta.columns:
         raise SystemExit(
-            "'{}' not in metadata. Available columns: {}".format(
-                group_col, list(meta.columns))
+            f"'{group_col}' not in metadata. Available columns: {list(meta.columns)}"
         )
     if ga is None or gb is None:
         groups = sorted(meta[group_col].dropna().unique().tolist())
         if len(groups) < 2:
             raise SystemExit(
-                "'{}' has only {}; need 2 groups for DA. "
-                "Pass --group-col depth_bin for a synthetic sanity check.".format(
-                    group_col, groups)
+                f"'{group_col}' has only {groups}; need 2 groups for DA. "
+                "Pass --group-col depth_bin for a synthetic sanity check."
             )
         ga = ga or groups[0]
         gb = gb or groups[1]
@@ -97,7 +95,7 @@ def main():
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
-    print("[pipeline] loading source={}".format(args.source), file=sys.stderr)
+    print(f"[pipeline] loading source={args.source}", file=sys.stderr)
     if args.source == "synthetic":
         bundle = make_synthetic(seed=args.seed)
         if args.group_col == "depth_bin":
@@ -111,7 +109,7 @@ def main():
 
     if counts.shape[0] < 4:
         raise SystemExit(
-            "Only {} samples after QC -- too few for DA.".format(counts.shape[0])
+            f"Only {counts.shape[0]} samples after QC -- too few for DA."
         )
 
     depths = sample_depths(counts)
@@ -126,9 +124,8 @@ def main():
         meta, args.group_col, args.group_a, args.group_b
     )
     print(
-        "[pipeline] DA contrast: {!r} vs {!r} "
-        "(mode={}, n_a={}, n_b={})".format(
-            ga, gb, mode, (labels == ga).sum(), (labels == gb).sum()),
+        f"[pipeline] DA contrast: {ga!r} vs {gb!r} "
+        f"(mode={mode}, n_a={(labels == ga).sum()}, n_b={(labels == gb).sum()})",
         file=sys.stderr,
     )
 
@@ -213,7 +210,7 @@ def main():
             indent=2,
         )
     )
-    print("[pipeline] wrote results to {}".format(out.resolve()), file=sys.stderr)
+    print(f"[pipeline] wrote results to {out.resolve()}", file=sys.stderr)
 
 
 if __name__ == "__main__":

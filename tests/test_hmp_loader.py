@@ -1,6 +1,8 @@
 """Loader contract test. Uses a tiny hand-written fixture, no network."""
 from pathlib import Path
+
 import pandas as pd
+
 from microbiome_analysis.data.loaders import load_hmp
 
 FIX = Path("data/fixtures")

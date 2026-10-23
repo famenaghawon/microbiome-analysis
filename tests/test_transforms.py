@@ -1,6 +1,7 @@
 """Compositional transforms + the depth bug guard."""
 import numpy as np
 import pandas as pd
+
 from microbiome_analysis.preprocess.transforms import clr, relative, sample_depths
 
 

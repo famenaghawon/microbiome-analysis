@@ -22,9 +22,7 @@ import re
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
-
 
 GENUS_RE = re.compile(r";g__([^;]+)")
 EXCLUDED_GENUS = {"__", "__other", "Incertae_Sedis", "uncultured", "other"}
@@ -50,15 +48,15 @@ def load_gmrepo(
     path = Path(path)
     if not path.exists():
         raise FileNotFoundError(
-            "Real GMrepo table not found at {}.\n"
+            f"Real GMrepo table not found at {path}.\n"
             "Place the wide-format genus table at data/cache/_genus_raw.tsv.\n"
             "Format: col 0 = taxonomy string, cols 1..N = samples, values = counts."
-            .format(path)
+            
         )
 
     raw = pd.read_csv(path, sep="\t", index_col=0)
     n_raw_taxa, n_raw_samples = raw.shape
-    print("[gmrepo] loaded {} taxa x {} samples".format(n_raw_taxa, n_raw_samples),
+    print(f"[gmrepo] loaded {n_raw_taxa} taxa x {n_raw_samples} samples",
           file=sys.stderr)
 
     genus_map = pd.Series([_extract_genus(t) for t in raw.index], index=raw.index)
@@ -79,16 +77,14 @@ def load_gmrepo(
     dead = depths < min_depth
     n_dead = int(dead.sum())
     if n_dead:
-        print("[gmrepo] dropping {} sample(s) with depth < {}: {}".format(
-            n_dead, min_depth, depths[dead].to_dict()), file=sys.stderr)
+        print(f"[gmrepo] dropping {n_dead} sample(s) with depth < {min_depth}: {depths[dead].to_dict()}", file=sys.stderr)
     counts = counts.loc[~dead]
 
     prevalence = (counts > 0).mean(axis=0)
     rare = prevalence < min_prevalence
     n_rare = int(rare.sum())
     if n_rare:
-        print("[gmrepo] dropping {} taxa with prevalence < {:.0%}".format(
-            n_rare, min_prevalence), file=sys.stderr)
+        print(f"[gmrepo] dropping {n_rare} taxa with prevalence < {min_prevalence:.0%}", file=sys.stderr)
     counts = counts.loc[:, ~rare]
 
     metadata = pd.DataFrame(

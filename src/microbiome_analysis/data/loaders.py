@@ -26,13 +26,11 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 
 from .cache import CACHE_DIR, fetch
 from .synthetic import make_synthetic
-
 
 HMP_TABLE_NAME = "hmp_genus.tsv"
 HMP_META_NAME = "hmp_metadata.tsv"
@@ -59,10 +57,10 @@ def load_gmrepo(
         keep = bundle["counts"].sample(max_samples, random_state=seed).index
         bundle["counts"] = bundle["counts"].loc[keep]
         bundle["metadata"] = bundle["metadata"].loc[keep]
-        bundle["report"]["n_final_samples"] = int(len(keep))
+        bundle["report"]["n_final_samples"] = len(keep)
         bundle["report"]["max_samples_applied"] = int(max_samples)
         print(
-            "[gmrepo] subsampled to {} samples (seed={})".format(max_samples, seed),
+            f"[gmrepo] subsampled to {max_samples} samples (seed={seed})",
             file=sys.stderr,
         )
 
@@ -87,16 +85,14 @@ def _validate_hmp(counts, meta):
     join_rate = len(inter) / len(counts) if len(counts) else 0.0
 
     print(
-        "[hmp] joined {} samples (dropped {} table-only, {} meta-only; "
-        "join rate {:.2%})".format(
-            len(inter), drop_table, drop_meta, join_rate),
+        f"[hmp] joined {len(inter)} samples (dropped {drop_table} table-only, {drop_meta} meta-only; "
+        f"join rate {join_rate:.2%})",
         file=sys.stderr,
     )
     if join_rate < 0.8:
         raise ValueError(
-            "Join rate {:.2%} < 80% -- sample IDs don't line up. "
-            "First table IDs: {}, first meta IDs: {}".format(
-                join_rate, list(counts.index[:3]), list(meta.index[:3]))
+            f"Join rate {join_rate:.2%} < 80% -- sample IDs don't line up. "
+            f"First table IDs: {list(counts.index[:3])}, first meta IDs: {list(meta.index[:3])}"
         )
 
     counts = counts.loc[inter]
@@ -138,8 +134,7 @@ def load_hmp(
         if not (counts_path and counts_path.exists()
                 and meta_path and meta_path.exists()):
             raise FileNotFoundError(
-                "Expected {} and {} under {}".format(
-                    HMP_TABLE_NAME, HMP_META_NAME, path)
+                f"Expected {HMP_TABLE_NAME} and {HMP_META_NAME} under {path}"
             )
     elif (CACHE_DIR / HMP_TABLE_NAME).exists() and (CACHE_DIR / HMP_META_NAME).exists():
         counts_path = CACHE_DIR / HMP_TABLE_NAME
@@ -149,18 +144,17 @@ def load_hmp(
         meta_path = FIXTURES_DIR / HMP_META_NAME
     elif os.getenv("MB_HMP_URL"):
         base = os.environ["MB_HMP_URL"].rstrip("/")
-        counts_path = fetch("{}/{}".format(base, HMP_TABLE_NAME),
+        counts_path = fetch(f"{base}/{HMP_TABLE_NAME}",
                             CACHE_DIR / HMP_TABLE_NAME)
-        meta_path = fetch("{}/{}".format(base, HMP_META_NAME),
+        meta_path = fetch(f"{base}/{HMP_META_NAME}",
                           CACHE_DIR / HMP_META_NAME)
     else:
         msg = (
             "No real HMP data available.\n"
-            "  Put {} and {} in {}/, OR\n"
-            "  Put them in {}/, OR\n"
+            f"  Put {HMP_TABLE_NAME} and {HMP_META_NAME} in {CACHE_DIR.resolve()}/, OR\n"
+            f"  Put them in {FIXTURES_DIR.resolve()}/, OR\n"
             "  Set $env:MB_HMP_URL to a base URL hosting both files."
-        ).format(HMP_TABLE_NAME, HMP_META_NAME,
-                 CACHE_DIR.resolve(), FIXTURES_DIR.resolve())
+        )
         if allow_synthetic_fallback:
             print("[hmp] WARNING: falling back to synthetic (tests only).\n" + msg,
                   file=sys.stderr)
@@ -183,7 +177,7 @@ def load_hmp(
             "source": "hmp",
             "counts_path": str(counts_path),
             "meta_path": str(meta_path),
-            "n_samples": int(len(counts)),
+            "n_samples": len(counts),
             "n_genera": int(counts.shape[1]),
         },
     }
@@ -198,6 +192,5 @@ def load(source, path=None, max_samples=None, seed=42):
     if source == "synthetic":
         return make_synthetic(seed=seed)
     raise ValueError(
-        "Unknown source: {!r}. Expected one of: 'gmrepo', 'hmp', 'synthetic'".format(
-            source)
+        f"Unknown source: {source!r}. Expected one of: 'gmrepo', 'hmp', 'synthetic'"
     )

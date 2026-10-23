@@ -3,7 +3,6 @@ import hashlib
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 
 import requests
 
@@ -19,7 +18,7 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def fetch(url: str, dest: Path, expected_sha256: Optional[str] = None) -> Path:
+def fetch(url: str, dest: Path, expected_sha256: str | None = None) -> Path:
     dest.parent.mkdir(parents=True, exist_ok=True)
     if dest.exists():
         if expected_sha256 and sha256(dest) != expected_sha256:
@@ -31,8 +30,7 @@ def fetch(url: str, dest: Path, expected_sha256: Optional[str] = None) -> Path:
         r.raise_for_status()
         tmp = dest.with_suffix(dest.suffix + ".part")
         with open(tmp, "wb") as f:
-            for chunk in r.iter_content(chunk_size=1 << 20):
-                f.write(chunk)
+            f.writelines(r.iter_content(chunk_size=1 << 20))
         tmp.replace(dest)
     if expected_sha256 and sha256(dest) != expected_sha256:
         raise ValueError(f"Checksum mismatch after fetch: {dest}")
