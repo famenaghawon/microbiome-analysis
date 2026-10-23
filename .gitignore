@@ -1,5 +1,4 @@
-# Python
-__pycache__/
+﻿__pycache__/
 *.py[cod]
 *.egg-info/
 .venv/
@@ -7,21 +6,12 @@ venv/
 .pytest_cache/
 .coverage
 htmlcov/
-
-# Data (never commit large/cached artifacts)
 data/cache/*
 !data/cache/.gitkeep
-data/fixtures/*.tsv
-data/fixtures/*.biom
-
-# Results
 results/*
 !results/.gitkeep
-
-# IDE
 .vscode/
 .idea/
 .DS_Store
-
-# Env
 .env
+cookies.txt
