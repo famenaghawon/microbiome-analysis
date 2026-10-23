@@ -1,15 +1,18 @@
 cff-version: 1.2.0
-message: "If you use this project, cite it via its Zenodo DOI (see below)."
+message: "If you use this project, cite it via the DOI below."
 title: microbiome-analysis
 abstract: >-
-  Reproducible microbiome analysis on real HMP-adjacent data:
+  Reproducible microbiome analysis on real HMP-adjacent multi-site data:
   compositionality-aware differential abundance, diversity, ordination,
   and leakage-safe ML. Audited by tests and CI.
 authors:
   - family-names: "Famenaghawon"
-    given-names: "Your Name"
-    orcid: ""
-version: 0.3.0
+    given-names: "Freedom Evbuomwan"
+    orcid: "https://orcid.org/0009-0003-1457-809X"
+version: 1.0.0
 date-released: "2026-10-23"
 license: MIT
 repository-code: "https://github.com/famenaghawon/microbiome-analysis"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.23599184"
