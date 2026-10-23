@@ -185,6 +185,16 @@ def load_hmp(
 
 def load(source, path=None, max_samples=None, seed=42):
     """Dispatch to the correct loader by source name."""
+    if source == "gmrepo_v2":
+        from .gmrepo_v2 import load_gmrepo_v2
+        bundle = load_gmrepo_v2()
+        if max_samples and bundle["counts"].shape[0] > max_samples:
+            keep = bundle["counts"].sample(max_samples, random_state=seed).index
+            bundle["counts"] = bundle["counts"].loc[keep]
+            bundle["metadata"] = bundle["metadata"].loc[keep]
+            bundle["report"]["n_final_samples"] = int(len(keep))
+            bundle["report"]["max_samples_applied"] = int(max_samples)
+        return bundle
     if source == "gmrepo":
         return load_gmrepo(path=path, max_samples=max_samples, seed=seed)
     if source == "hmp":
@@ -192,5 +202,5 @@ def load(source, path=None, max_samples=None, seed=42):
     if source == "synthetic":
         return make_synthetic(seed=seed)
     raise ValueError(
-        f"Unknown source: {source!r}. Expected one of: 'gmrepo', 'hmp', 'synthetic'"
+        "Unknown source: {!r}. Expected one of: 'gmrepo_v2', 'gmrepo', 'hmp', 'synthetic'".format(source)
     )
