@@ -1,0 +1,27 @@
+site_name: microbiome-analysis
+site_description: Reproducible microbiome analysis on real HMP-adjacent data
+site_author: famenaghawon
+site_url: https://famenaghawon.github.io/microbiome-analysis/
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - content.code.copy
+
+nav:
+  - Home: index.md
+  - Data: data.md
+  - Methods: methods.md
+  - Limitations: limitations.md
+  - API: api.md
+
+markdown_extensions:
+  - admonition
+  - tables
+  - fenced_code
+  - codehilite
+
+plugins:
+  - search
