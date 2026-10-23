@@ -1,0 +1,21 @@
+{
+  "n_samples": 122,
+  "n_genera": 122,
+  "alpha_means": {
+    "richness": 60.0655737704918,
+    "shannon": 2.706026043206609,
+    "simpson": 0.8647277339393298
+  },
+  "pcoa_braycurtis": {
+    "pc1_explained_pct": 20.090834915286695,
+    "pc2_explained_pct": 13.516447549025049
+  },
+  "permanova_depth_bin": {
+    "method": "PERMANOVA",
+    "pseudo_f": 13.526574133471932,
+    "p_value": 0.001,
+    "n_samples": 122,
+    "n_groups": 2,
+    "permutations": 999
+  }
+}
