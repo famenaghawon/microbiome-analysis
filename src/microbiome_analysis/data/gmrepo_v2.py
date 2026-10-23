@@ -22,9 +22,7 @@ Returns the standard bundle:
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
-
 
 ABUNDANCE_PATH = Path("data/cache/_genus_filtered.tsv")
 META_PATH = Path("data/cache/sample_metadata_grouped.tsv")

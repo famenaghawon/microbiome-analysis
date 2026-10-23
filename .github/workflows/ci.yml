@@ -28,8 +28,7 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Lint with ruff
-        run: ruff check src tests scripts
-
+        run: ruff check src tests scripts dashboard
       - name: Run tests
         run: pytest -q --cov=src/microbiome_analysis --cov-report=term-missing
 

@@ -484,7 +484,7 @@ with tab_ml:
     # Count samples per group
     group_counts = meta[group_col].astype(str).value_counts()
     min_group_size = int(group_counts.min())
-    n_groups_for_ml = int(len(group_counts))
+    n_groups_for_ml = len(group_counts)
 
     if n_groups_for_ml < 2:
         st.error(
@@ -571,7 +571,7 @@ with tab_ml:
 
                 with st.expander("View full feature importance table"):
                     st.dataframe(importance, width="stretch")
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 st.error(
                     f"ML failed with {folds}-fold CV: {type(e).__name__}: {e}\n\n"
                     f"Try: lower folds to {max(2, min_group_size - 1)}, or pick a 2-class "
