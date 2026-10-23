@@ -1,0 +1,22 @@
+# Limitations
+
+We are explicit about what this does and does not claim.
+
+1. **Compositional data.** All DA runs on CLR unless rarefied explicitly.
+   Absolute abundances cannot be recovered from 16S data alone.
+
+2. **ANCOM-BC simplification.** Our `ancom_bc_da` is a bias-corrected
+   CLR + Welch t-test, **not** a reimplementation of the Bioconductor
+   package. Cite Lin & Peddada (2020) for the method, not this code.
+
+3. **No phylogenetic distances yet.** UniFrac is planned for a future
+   phase. Bray-Curtis and Jaccard are taxonomy-only.
+
+4. **No batch correction.** Metadata-level batch effects are not modeled.
+   For multi-study comparisons, use ComBat-seq or equivalent first.
+
+5. **Single-cohort evaluation.** The ML module is trained and tested on
+   one cohort. Generalization to new cohorts is not validated here.
+
+6. **Not for clinical decisions.** This is a reproducible analysis
+   toolkit and educational reference.
