@@ -13,7 +13,6 @@ We are explicit about what this does and does not claim.
    phase. Bray-Curtis and Jaccard are taxonomy-only.
 
 4. **No batch correction.** Metadata-level batch effects are not modeled.
-   For multi-study comparisons, use ComBat-seq or equivalent first.
 
 5. **Single-cohort evaluation.** The ML module is trained and tested on
    one cohort. Generalization to new cohorts is not validated here.
